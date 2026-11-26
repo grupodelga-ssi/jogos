@@ -344,9 +344,18 @@
 #ssiRoot .cnx-dica{font-size:12px;padding:6px 10px;bottom:auto;top:8px;transform:translateY(-200%)}
 
 }
-#ssiRoot.fs #tArcade.retrato .area{width:100vw;height:100vh;height:100dvh;background:#000099}
-#ssiRoot.fs #tArcade.retrato .cnx{height:100%;min-height:0;border-radius:0}
-#ssiRoot.fs #tArcade.retrato .cnx-top{padding-right:70px}
+#ssiRoot.fs #tArcade.cheio .area{width:100vw;height:100vh;height:100dvh;background:#000099}
+#ssiRoot.fs #tArcade.cheio .cnx{height:100%;min-height:0;border-radius:0}
+#ssiRoot.fs #tArcade.cheio .cnx-top{padding-right:70px}
+@media (orientation:landscape) and (max-height:520px){#ssiRoot .cnx{padding:6px 10px;gap:4px}
+#ssiRoot .cnx-m{width:44px;height:44px}
+#ssiRoot .cnx-bal{font-size:12px;padding:5px 10px}
+#ssiRoot .cnx-k b{font-size:17px}
+#ssiRoot .cnx-col{gap:5px}
+#ssiRoot .cnx-col h3{font-size:11px;padding:3px 12px}
+#ssiRoot .cnx-ct{padding:3px 8px}
+#ssiRoot .cnx-tx{font-size:12px}
+#ssiRoot .cnx-dica{bottom:6px;font-size:12px;padding:5px 10px}}
 
 
 #ssiRoot:fullscreen{overflow:auto;background:var(--cinza,#f4f4f8)}
@@ -752,7 +761,7 @@ const ehMobile=()=>{try{const toque=matchMedia('(pointer:coarse)').matches||navi
 const retrato=()=>innerHeight>innerWidth;
 window.__pausa=false;
 function entrarTelaCheia(){ if(!ehMobile()) return; RAIZ().classList.add('fs');
-  try{const el=RAIZ(),rq=el.requestFullscreen||el.webkitRequestFullscreen; if(rq&&!document.fullscreenElement){const p=rq.call(el); if(p&&p.then) p.then(()=>{try{ if(!(atual&&atual.retrato)) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}}).catch(()=>{});}}catch(e){} }
+  try{const el=RAIZ(),rq=el.requestFullscreen||el.webkitRequestFullscreen; if(rq&&!document.fullscreenElement){const p=rq.call(el); if(p&&p.then) p.then(()=>{try{ screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}}).catch(()=>{});}}catch(e){} }
 function sairTelaCheia(){ RAIZ().classList.remove('fs'); $('girarFS').classList.add('oculto'); window.__pausa=false;
   try{ if(document.fullscreenElement) (document.exitFullscreen||document.webkitExitFullscreen).call(document); }catch(e){} }
 let jogarVertical=false;
@@ -760,11 +769,11 @@ function esperarHorizontal(){ return new Promise(ok=>{ if(!ehMobile()||!retrato(
   let feito=false; const fim=v=>{ if(feito) return; feito=true; window.removeEventListener('resize',chk); $('girarFS').classList.add('oculto'); setTimeout(()=>ok(v),v?250:0); };
   const chk=()=>{ if(!retrato()) fim(true); }; window.addEventListener('resize',chk);
   $('gVertical').onclick=()=>{ jogarVertical=true; fim(true); }; $('gVoltar').onclick=()=>fim(false); }); }
-window.addEventListener('resize',()=>{ if(!RAIZ().classList.contains('fs')||jogarVertical||(atual&&atual.retrato)) return; const r=retrato(); window.__pausa=r; $('girarFS').classList.toggle('oculto',!r); });
+window.addEventListener('resize',()=>{ if(!RAIZ().classList.contains('fs')||jogarVertical) return; const r=retrato(); window.__pausa=r; $('girarFS').classList.toggle('oculto',!r); });
 async function iniciarJogo(){
   const j=atual; await imgPronta; try{ await document.fonts.load('900 20px "Exo 2"'); }catch(e){}
   if(j.id==='caca'){ CACA.iniciar(); return; }
-  $('aNome').textContent=j.nome; $('aArea').innerHTML=''; $('tArcade').classList.toggle('retrato',!!j.retrato); tela('tArcade'); entrarTelaCheia(); if(!j.retrato&&!await esperarHorizontal()){ sairTelaCheia(); montarPortal(); tela('tPortal'); return; }
+  $('aNome').textContent=j.nome; $('aArea').innerHTML=''; $('tArcade').classList.toggle('cheio',!!j.telaCheia); tela('tArcade'); entrarTelaCheia(); if(!await esperarHorizontal()){ sairTelaCheia(); montarPortal(); tela('tPortal'); return; }
   const t0=Date.now();
   inst=j.iniciar($('aArea'),res=>{ inst=null; sairTelaCheia(); res.tempo=res.tempo??Math.round((Date.now()-t0)/1000); mostrarResultado(j,res); });
 }
@@ -1414,7 +1423,7 @@ const PARES=[
 const POR_ID=Object.fromEntries(PARES.map(p=>[p.id,p]));
 const CORES=['#ffcf33','#ff7a1a','#e84fa0','#7a2cff','#00b8d9','#13a65a'];
 JOGOS.conecta={
-  id:'conecta', nome:'Conecta Seguro', curto:'Conecta', tema:'Celular protegido', duracao:'60 s', fundo:'cFundoH', personagem:'cNo', cor:'#0C00FF', retrato:true,
+  id:'conecta', nome:'Conecta Seguro', curto:'Conecta', tema:'Celular protegido', duracao:'60 s', fundo:'cFundoH', personagem:'cNo', cor:'#0C00FF', telaCheia:true,
   resumo:'Ligue cada perigo do celular à proteção certa com cordinhas.', subtitulo:'Ligue os pontos · 60 segundos',
   regras:[['👆','Toque num perigo ❗ e puxe a cordinha'],['✅','Solte na proteção certa'],['🛡️','Errou? A cordinha arrebenta e quebra um escudo']],
   ctrlPc:'🖱️ Clique num perigo e arraste até a proteção', ctrlMobile:'👆 Toque num perigo e arraste até a proteção',
