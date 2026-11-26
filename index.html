@@ -483,13 +483,12 @@ const MUSICA=(function(){
 
   /* ---------------- TRILHAS ---------------- */
   const T={
-    /* Portal: lo-fi calmo em Dó maior */
-    home:{bpm:80,div:2,vol:.9,faixas:[
-      L(`C3+E3+G3+B3 - - - - - - - A2+C3+E3+G3 - - - - - - - F2+A2+C3+E3 - - - - - - - G2+B2+D3+F3 - - - - - - -`,{w:'triangle',v:.05,env:'pad',corte:900}),
-      L(`C2 . . . G2 . . . A1 . . . E2 . . . F1 . . . C2 . . . G1 . . . D2 . . .`,{w:'sine',v:.16,env:'sus'}),
-      L(`E4 G4 B4 G4 C5 B4 G4 E4 C4 E4 G4 E4 A4 G4 E4 C4 A3 C4 E4 C4 F4 E4 C4 A3 B3 D4 F4 D4 G4 F4 D4 B3`,{w:'triangle',v:.045,env:'pluck',corte:2200}),
-      L(`E5 - - . D5 . C5 - . . . . . . . . C5 - . A4 . G4 - - . . . . . . D5 .`,{w:'sine',v:.06,env:'sus'}),
-      D(`k...h...k.k.h... k...h...k...h.h.`)
+    /* Portal "Grove": G-funk lento, sintetizador agudo chorão, vamp Mi menor */
+    home:{bpm:88,div:4,vol:.95,swing:.22,faixas:[
+      L(`E3+G3+B3+D4+F#4 - - - . . . . . . E3+G3+B3+D4 - . . . . A2+C3+E3+G3+B3 - - - . . . . . . A2+C3+E3+G3 - . . . . E3+G3+B3+D4+F#4 - - - . . . . . . E3+G3+B3+D4 - . . . . A2+C3+E3+G3+B3 - - - . . . . . . A2+C3+E3+G3 - . . . .`,{w:'triangle',v:.035,env:'sus',corte:1700}),
+      L(`E1 - - . . E2 . E1 . . G1 . A1 . B1 . A1 - - . . A2 . A1 . . C2 . B1 . G1 . E1 - - . . E2 . E1 . . G1 . A1 . B1 . A1 - - . . A2 . A1 . G1 . F#1 . D1 . .`,{w:'sawtooth',v:.12,env:'sus',corte:380}),
+      L(`B5 - - - - - - - . . D6 - B5 - A5 - G5 - - - - - E5 - - - - - . . . . B5 - - - - - - - . . D6 - E6 - D6 - B5 - - - A5 - - - G5 - - - F#5 - - -`,{w:'sine',v:.065,env:'sus',glide:.09,vib:9}),
+      D(`k.....k...k.....`), D(`....c.......c...`), D(`h.h.h.h.h.h.hoh.`)
     ]},
     /* Ninja: pentatônica de Ré menor, rápido */
     golpe:{bpm:140,div:4,vol:.8,faixas:[
@@ -533,14 +532,19 @@ const MUSICA=(function(){
   function iniciarCtx(){ if(ctx) return true; try{ ctx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return false; }
     mestre=ctx.createGain(); mestre.gain.value=.55; const comp=ctx.createDynamicsCompressor(); mestre.connect(comp).connect(ctx.destination);
     const n=ctx.sampleRate; ruido=ctx.createBuffer(1,n,n); const d=ruido.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1; return true; }
-  function voz(f,t,dur,l,b){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type=l.w; o.frequency.value=f; let no=o;
+  function voz(f,t,dur,l,b){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type=l.w; let no=o;
+    if(l.glide&&l._ult){ o.frequency.setValueAtTime(l._ult,t); o.frequency.exponentialRampToValueAtTime(f,t+l.glide); } else o.frequency.setValueAtTime(f,t); l._ult=f;
+    if(l.vib){ const lf=ctx.createOscillator(),lg=ctx.createGain(); lf.frequency.value=5.5; lg.gain.value=l.vib; lf.connect(lg).connect(o.detune); lf.start(t); lf.stop(t+dur+.2); }
     if(l.corte){ const fl=ctx.createBiquadFilter(); fl.type='lowpass'; fl.frequency.value=l.corte; o.connect(fl); no=fl; }
+    if(l.bp){ const fl=ctx.createBiquadFilter(); fl.type='bandpass'; fl.Q.value=l.q||4; fl.frequency.setValueAtTime(l.bp*.6,t); fl.frequency.exponentialRampToValueAtTime(l.bp*1.7,t+.12); fl.frequency.exponentialRampToValueAtTime(l.bp,t+.3); no.connect(fl); no=fl; }
     no.connect(g).connect(b); const v=l.v;
     if(l.env==='pad'){ g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+Math.min(.4,dur*.4)); g.gain.setValueAtTime(v,t+dur*.8); g.gain.linearRampToValueAtTime(.0001,t+dur+.3); o.start(t); o.stop(t+dur+.35); }
     else if(l.env==='sus'){ g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+.02); g.gain.exponentialRampToValueAtTime(v*.6,t+dur*.7); g.gain.exponentialRampToValueAtTime(.0001,t+dur+.08); o.start(t); o.stop(t+dur+.1); }
     else { g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.exponentialRampToValueAtTime(.0001,t+Math.max(.09,Math.min(dur,.35))); o.start(t); o.stop(t+.4); } }
   function bateria(ch,t,b,vol){ if(ch==='k'){ const o=ctx.createOscillator(),g=ctx.createGain(); o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(45,t+.12);
       g.gain.setValueAtTime(.5*vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.22); o.connect(g).connect(b); o.start(t); o.stop(t+.25); return; }
+    if(ch==='c'){ [0,.012,.026].forEach((o,i)=>{ const s=ctx.createBufferSource(); s.buffer=ruido; const f=ctx.createBiquadFilter(),g=ctx.createGain(); f.type='bandpass'; f.frequency.value=1300; f.Q.value=1.2;
+      g.gain.setValueAtTime(.0001,t+o); g.gain.linearRampToValueAtTime(.2*vol,t+o+.002); g.gain.exponentialRampToValueAtTime(.0001,t+o+(i===2?.16:.02)); s.connect(f).connect(g).connect(b); s.start(t+o,Math.random()*.5); s.stop(t+o+.2); }); return; }
     if(ch==='s'||ch==='h'||ch==='o'){ const s=ctx.createBufferSource(); s.buffer=ruido; const f=ctx.createBiquadFilter(),g=ctx.createGain();
       f.type=ch==='s'?'bandpass':'highpass'; f.frequency.value=ch==='s'?1800:7000; const d=ch==='s'?.14:ch==='o'?.18:.04, a=ch==='s'?.22:.07;
       g.gain.setValueAtTime(a*vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+d); s.connect(f).connect(g).connect(b); s.start(t,Math.random()*.5); s.stop(t+d+.02); } }
@@ -548,10 +552,11 @@ const MUSICA=(function(){
     const sp=60/(tr.bpm*(rapido?1.3:1))/tr.div;
     while(prox<ctx.currentTime+.15){
       tr.faixas.forEach(l=>{
-        if(l.d){ const ch=l.d[passo%l.d.length]; bateria(ch,prox,bus,tr.vol); if(rapido&&ch==='.'&&passo%2===1) bateria('h',prox,bus,tr.vol*.7); return; }
+        const tt=prox+((passo%2)?sp*(tr.swing||0):0);
+        if(l.d){ const ch=l.d[passo%l.d.length]; bateria(ch,tt,bus,tr.vol); if(rapido&&ch==='.'&&passo%2===1&&l===tr.faixas[tr.faixas.length-1]) bateria('h',tt,bus,tr.vol*.7); return; }
         const i=passo%l.n.length,x=l.n[i]; if(!x||x==='-') return;
         let k=1; while(l.n[(i+k)%l.n.length]==='-'&&k<l.n.length) k++;
-        x.forEach(f=>voz(f,prox,k*sp,l,bus)); });
+        x.forEach(f=>voz(f,tt,k*sp,l,bus)); });
       prox+=sp; passo++; } }
   function soltarBus(){ if(!bus) return; const b=bus; b.gain.setTargetAtTime(0,ctx.currentTime,.15); setTimeout(()=>{try{b.disconnect();}catch(e){}},900); bus=null; }
   function comecar(nome){ if(!iniciarCtx()) return; if(ctx.state==='suspended') ctx.resume().catch(()=>{});
